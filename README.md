@@ -1,6 +1,6 @@
 # Deep Learning Course Project ETH Zurich 2019
 # Data-Augmentation-Using-GANs
-
+## Project Team Members: Divya Guruswamy, Rhea Sukthanker, Peter Gronquist
 ## Directory structure:
 
 Download data folder from https://polybox.ethz.ch/index.php/s/HR0yNHW4eCy5Sri
