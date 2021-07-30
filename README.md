@@ -1,4 +1,7 @@
-Directory structure:
+# Deep Learning Course Project ETH Zurich 2019
+# Data-Augmentation-Using-GANs
+
+## Directory structure:
 
 Download data folder from https://polybox.ethz.ch/index.php/s/HR0yNHW4eCy5Sri
 
@@ -29,7 +32,7 @@ The code is implemented in tensorflow 1.13.1 and keras using tensorflow backend 
 	1. acgan_ali_image_generation.py: File to generate images for ACGAN_ALI_pretrained models
 1. Other: Contains previously used classifier based on reduced Efficient-Net tested on complete data. Not included in paper as performance was more or less comparable to previous classifier
 
-Commands:
+## Training commands:
 All the files have to be run in their respective directories
 * To run CGAN,ACGAN_base,ACGAN_mod_sampling,ACGAN_arch2_base,ACGAN_ALI_pretrained files:
 
