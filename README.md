@@ -70,7 +70,8 @@ All the files have to be run in their respective directories
 	``` python acgan_ali_image_generation.py --model_name '../data/ACGAN_ALI_pretrained/V1/acgan_ali_v1_generator_cifar100.h5' --n_classes 100 --image_name 'generated_cifar.png' ```
 
 
-
+## Project Report 
+Report_dl2019.pdf contains the project report. The experimental evaluations and description of the proposed method is presented here.
 
 
 [1]: https://machinelearningmastery.com/how-to-develop-a-conditional-generative-adversarial-network-from-scratch/ 
