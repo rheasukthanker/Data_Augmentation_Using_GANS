@@ -8,16 +8,21 @@ import numpy as np
 import os
 from PIL import Image
 from keras.preprocessing import image
+
+
 def preprocess_input(x):
     x = x.astype(np.float32)
     x /= 255.
     return x
 
+
 def decode_output(x):
     x = x.astype(np.float32)
     x *= 255.
     return x
-def reconstruct_img(x,labels,xgen, zgen):
+
+
+def reconstruct_img(x, labels, xgen, zgen):
     """
     x assumes x_train
     xgen: trained xgenerater
@@ -34,8 +39,8 @@ def reconstruct_img(x,labels,xgen, zgen):
     x_copy = np.copy(x)
     x_copy = x_copy.astype(np.float32)
     x_copy = preprocess_input(x_copy)
-    z_gen = zgen.predict_on_batch([x_copy,labels])
-    x_gen = xgen.predict_on_batch([z_gen,labels])
+    z_gen = zgen.predict_on_batch([x_copy, labels])
+    x_gen = xgen.predict_on_batch([z_gen, labels])
     x_gen = decode_output(x_gen)
     x_gen = np.clip(x_gen, 0., 255.).astype(np.uint8)
 
@@ -48,26 +53,31 @@ def reconstruct_img(x,labels,xgen, zgen):
     #    cols.append(col)
     #concatenated = np.concatenate(cols, axis=1)
     return x_gen
-n_classes=100
-input_shape=(32,32,3)
-(x_train, y_train), (x_test, y_test) =cifar100.load_data()
-x_train =preprocess_input(x_train)
-zgen = models.create_zgenerater(input_shape,n_classes)
+
+
+n_classes = 100
+input_shape = (32, 32, 3)
+(x_train, y_train), (x_test, y_test) = cifar100.load_data()
+x_train = preprocess_input(x_train)
+zgen = models.create_zgenerater(input_shape, n_classes)
 zgen.load_weights('result/epochs300/zgen_weights.h5')
 xgen = models.create_xgenerater(n_classes)
 xgen.load_weights('result/epochs300/xgen_weights.h5')
-batch_size=64
-z_train=[]
-i=0
-while (i+batch_size)<x_train.shape[0]:
-      start_index=i
-      end_index=start_index+batch_size
-      z_train.append(reconstruct_img(x_train[start_index:end_index,:,:,:],y_train[start_index:end_index],xgen,zgen))
-      i=end_index
-z_train.append(reconstruct_img(x_train[i:x_train.shape[0],:,:,:],y_train[i:x_train.shape[0]],xgen,zgen))
-z_train=np.vstack(z_train)
+batch_size = 64
+z_train = []
+i = 0
+while (i + batch_size) < x_train.shape[0]:
+    start_index = i
+    end_index = start_index + batch_size
+    z_train.append(
+        reconstruct_img(x_train[start_index:end_index, :, :, :],
+                        y_train[start_index:end_index], xgen, zgen))
+    i = end_index
+z_train.append(
+    reconstruct_img(x_train[i:x_train.shape[0], :, :, :],
+                    y_train[i:x_train.shape[0]], xgen, zgen))
+z_train = np.vstack(z_train)
 with open('recons_train_cifar100.pkl', 'wb') as f:
-     pickle.dump(z_train, f)
-with open('recons_train_labels_cifar100.pkl','wb') as f:
-     pickle.dump(y_train, f)
-
+    pickle.dump(z_train, f)
+with open('recons_train_labels_cifar100.pkl', 'wb') as f:
+    pickle.dump(y_train, f)
