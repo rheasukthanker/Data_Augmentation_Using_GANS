@@ -23,11 +23,13 @@ import tensorflow as tf
 
 def binary_crossentropy_masked(y_true, y_pred):
     #define masked objective (mask real/fake loss for real samples)
-    y_true_masked = tf.boolean_mask(y_true,tf.equal(y_true,1))
-    y_pred_masked = tf.boolean_mask(y_pred,tf.equal(y_true,1))
+    y_true_masked = tf.boolean_mask(y_true, tf.equal(y_true, 1))
+    y_pred_masked = tf.boolean_mask(y_pred, tf.equal(y_true, 1))
     return K.mean(K.binary_crossentropy(y_true_masked, y_pred_masked))
 
-def generate_latent_representations(num_samples, real_samples, real_labels, perc_real, n_classes):
+
+def generate_latent_representations(num_samples, real_samples, real_labels,
+                                    perc_real, n_classes):
     #generate latent representations (mixture of real and fake)
     num_real = int(perc_real * num_samples)
     num_fake = num_samples - num_real
@@ -36,20 +38,22 @@ def generate_latent_representations(num_samples, real_samples, real_labels, perc
     real_labels = real_labels[real_inds]
     fake_z = np.random.normal(size=(num_fake, 1, 1, 64))
     fake_labels = np.random.randint(0, n_classes, num_fake)
-    real_labels=np.reshape(real_labels,[np.shape(real_labels)[0],1])
-    fake_labels=np.reshape(fake_labels,[np.shape(fake_labels)[0],1])
+    real_labels = np.reshape(real_labels, [np.shape(real_labels)[0], 1])
+    fake_labels = np.reshape(fake_labels, [np.shape(fake_labels)[0], 1])
     all_z = np.concatenate([real_z, fake_z], axis=0)
     all_labels = np.vstack([real_labels, fake_labels])
     return [all_z, all_labels]
 
+
 def generate_latent_points(latent_dim, n_samples, n_classes=2):
     # generate points in the latent space
-    x_input =np.random.normal(size=(n_samples,1,1,latent_dim))
+    x_input = np.random.normal(size=(n_samples, 1, 1, latent_dim))
     # reshape into a batch of inputs for the network
     z_input = x_input
     # generate labels
     labels = randint(0, n_classes, n_samples)
     return [z_input, labels]
+
 
 def generate_imbalance(trainX, trainy, class_cur, perc):
     class_to_sparsify = class_cur
@@ -61,14 +65,16 @@ def generate_imbalance(trainX, trainy, class_cur, perc):
     trainy_sparsified = np.delete(trainy, index_class)
     return trainX_sparsified, trainy_sparsified
 
+
 def generate_latent_points(latent_dim, n_samples, n_classes=2):
     # generate points in the latent space
-    x_input =np.random.normal(size=(n_samples,1,1,latent_dim))
+    x_input = np.random.normal(size=(n_samples, 1, 1, latent_dim))
     # reshape into a batch of inputs for the network
     z_input = x_input
     # generate labels
     labels = randint(0, n_classes, n_samples)
     return [z_input, labels]
+
 
 # use the generator to generate n fake examples, with class labels
 def generate_fake_samples(generator, latent_dim, n_samples):
@@ -122,19 +128,21 @@ def define_discriminator(in_shape=(50, 50, 3), n_classes=2):
     model = Model(input_x, [out1, out2])
     # compile model
     opt = optimizers.Adam(lr=0.00001, beta_1=0.5)
-    model.compile(loss=['binary_crossentropy', 'sparse_categorical_crossentropy'], optimizer=opt)
+    model.compile(
+        loss=['binary_crossentropy', 'sparse_categorical_crossentropy'],
+        optimizer=opt)
     return model
 
 
 # define the standalone generator model
 def define_generator(latent_dim, n_classes=2):
     input = Input(shape=(1, 1, 64))
-    label = Input(shape=(1,))
+    label = Input(shape=(1, ))
     class_embs = Embedding(n_classes, 64, input_length=1)(label)
-    input2 = Reshape((64,))(input)
-    class_embs2 = Reshape((64,))(class_embs)
+    input2 = Reshape((64, ))(input)
+    class_embs2 = Reshape((64, ))(class_embs)
     input_concat = Concatenate(axis=1)([input2, class_embs2])
-    x = Dense(64, input_shape=(128,))(input_concat)
+    x = Dense(64, input_shape=(128, ))(input_concat)
     x = Reshape((1, 1, 64))(x)
     x = Conv2DTranspose(256, (5, 5), strides=(1, 1))(x)
     x = BatchNormalization()(x)
@@ -168,7 +176,9 @@ def define_gan(g_model, d_model):
     model = Model(g_model.input, gan_output)
     # compile model
     opt = optimizers.Adam(lr=0.00001, beta_1=0.5)
-    model.compile(loss=[binary_crossentropy_masked, 'sparse_categorical_crossentropy'], optimizer=opt)
+    model.compile(
+        loss=[binary_crossentropy_masked, 'sparse_categorical_crossentropy'],
+        optimizer=opt)
     return model
 
 
@@ -182,13 +192,18 @@ def load_real_samples():
     np.random.RandomState(seed=42).shuffle(randomize)
     X = all_images[randomize, :, :, :]
     y = all_labels[randomize]
-    x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+    x_train, x_test, y_train, y_test = train_test_split(X,
+                                                        y,
+                                                        test_size=0.25,
+                                                        random_state=42)
     del all_images
     del all_labels
     X = x_train.astype('float32')
     X = X / 255.
     y = y_train
     return [X, y]
+
+
 # select real samples
 def generate_real_samples(dataset, n_samples):
     # split into images and labels
@@ -219,7 +234,13 @@ def summarize_performance(step, g_model, latent_dim, n_samples=100):
 
 
 # train the generator and discriminator
-def train(g_model, d_model, gan_model, dataset, latent_dim, n_epochs=300, n_batch=64):
+def train(g_model,
+          d_model,
+          gan_model,
+          dataset,
+          latent_dim,
+          n_epochs=300,
+          n_batch=64):
     # calculate the number of batches per training epoch
     bat_per_epo = int(dataset[0].shape[0] / n_batch)
     # calculate the number of training iterations
@@ -232,49 +253,58 @@ def train(g_model, d_model, gan_model, dataset, latent_dim, n_epochs=300, n_batc
     with open('../../data/z_train_labels_med.pkl', 'rb') as f:
         real_labels = pickle.load(f)
     # manually enumerate epochs
-    lossg=[]
-    lossd_real=[]
-    lossd_fake=[]
+    lossg = []
+    lossd_real = []
+    lossd_fake = []
     for i in range(n_epochs):
-      for j in range(bat_per_epo):
-        # get randomly selected 'real' samples
-        [X_real, labels_real], y_real = generate_real_samples(dataset, half_batch)
-        # update discriminator model weights
-        _, d_r1, d_r2 = d_model.train_on_batch(X_real, [y_real, labels_real])
-        # generate 'fake' examples
-        [X_fake, labels_fake], y_fake = generate_fake_samples(g_model, latent_dim, half_batch)
-        # update discriminator model weights
-        _, d_f, d_f2 = d_model.train_on_batch(X_fake, [y_fake, labels_fake])
-        # prepare points in latent space as input for the generator
-        [z_input, z_labels] = generate_latent_representations(n_batch, real_samples, real_labels, 0.25, 2)
-        # create inverted labels for the fake samples,i.e, we pass the fake images generated to the gan model as real images. So, the loss is high if the
-        # discriminator correctly classifies the image as fake. Since loss has to be minimized, the generator has to produce images so that the discriminator
-        # classifies them as real.
-        inds_shuffle = np.random.permutation(range(0, z_input.shape[0]))
-        z_input = z_input[inds_shuffle, :]
-        z_labels = z_labels[inds_shuffle]
-        n_real = int(0.25 * n_batch)
-        y_real = np.zeros((n_real, 1))
-        y_fake = np.ones((n_batch - n_real, 1))
-        y_gan = np.concatenate([y_real, y_fake], axis=0)
-        y_gan = y_gan[inds_shuffle, :]
-        # update the generator via the discriminator's error
-        _, g_1, g_2 = gan_model.train_on_batch([z_input, z_labels], [y_gan, z_labels])
-        # summarize loss on this batch
-        lossg.append([g_1,g_2])
-        lossd_fake.append([d_f,d_f2])
-        lossd_real.append([d_r1,d_r2])
-        # evaluate the model performance every 'epoch'
-        print('>%d, dr[%.3f,%.3f], df[%.3f,%.3f], g[%.3f,%.3f]' % ((i + 1)*(j+1), d_r1, d_r2, d_f, d_f2, g_1, g_2))
-        # print('>%d, dr[%.3f,%.3f], df[%.3f,%.3f], g[%.3f,%.3f]' % (i+1, d_r1,d_r2, d_f,d_f2, g_1,g_2))
-      filename = 'acgan_med_model_'+str(i)+'.h5'
-      g_model.save(filename)
-    with open("generator_loss_med_test3.pkl","wb") as f:
-         pickle.dump(lossg, f)
-    with open("discriminator_real_loss_med_test3.pkl","wb") as f:
-         pickle.dump(lossd_real,f)
+        for j in range(bat_per_epo):
+            # get randomly selected 'real' samples
+            [X_real,
+             labels_real], y_real = generate_real_samples(dataset, half_batch)
+            # update discriminator model weights
+            _, d_r1, d_r2 = d_model.train_on_batch(X_real,
+                                                   [y_real, labels_real])
+            # generate 'fake' examples
+            [X_fake, labels_fake
+             ], y_fake = generate_fake_samples(g_model, latent_dim, half_batch)
+            # update discriminator model weights
+            _, d_f, d_f2 = d_model.train_on_batch(X_fake,
+                                                  [y_fake, labels_fake])
+            # prepare points in latent space as input for the generator
+            [z_input, z_labels
+             ] = generate_latent_representations(n_batch, real_samples,
+                                                 real_labels, 0.25, 2)
+            # create inverted labels for the fake samples,i.e, we pass the fake images generated to the gan model as real images. So, the loss is high if the
+            # discriminator correctly classifies the image as fake. Since loss has to be minimized, the generator has to produce images so that the discriminator
+            # classifies them as real.
+            inds_shuffle = np.random.permutation(range(0, z_input.shape[0]))
+            z_input = z_input[inds_shuffle, :]
+            z_labels = z_labels[inds_shuffle]
+            n_real = int(0.25 * n_batch)
+            y_real = np.zeros((n_real, 1))
+            y_fake = np.ones((n_batch - n_real, 1))
+            y_gan = np.concatenate([y_real, y_fake], axis=0)
+            y_gan = y_gan[inds_shuffle, :]
+            # update the generator via the discriminator's error
+            _, g_1, g_2 = gan_model.train_on_batch([z_input, z_labels],
+                                                   [y_gan, z_labels])
+            # summarize loss on this batch
+            lossg.append([g_1, g_2])
+            lossd_fake.append([d_f, d_f2])
+            lossd_real.append([d_r1, d_r2])
+            # evaluate the model performance every 'epoch'
+            print('>%d, dr[%.3f,%.3f], df[%.3f,%.3f], g[%.3f,%.3f]' %
+                  ((i + 1) * (j + 1), d_r1, d_r2, d_f, d_f2, g_1, g_2))
+            # print('>%d, dr[%.3f,%.3f], df[%.3f,%.3f], g[%.3f,%.3f]' % (i+1, d_r1,d_r2, d_f,d_f2, g_1,g_2))
+        filename = 'acgan_med_model_' + str(i) + '.h5'
+        g_model.save(filename)
+    with open("generator_loss_med_test3.pkl", "wb") as f:
+        pickle.dump(lossg, f)
+    with open("discriminator_real_loss_med_test3.pkl", "wb") as f:
+        pickle.dump(lossd_real, f)
     with open("discriminator_fake_loss_med_test3.pkl", "wb") as f:
-         pickle.dump(lossd_fake, f)
+        pickle.dump(lossd_fake, f)
+
 
 # size of the latent space
 latent_dim = 64
